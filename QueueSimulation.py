@@ -75,3 +75,37 @@ class QueueSimulation:
             'num_samples': len(self.waiting_times),
             'utilization': np.mean(self.service_times) * self.arrival_rate / self.num_servers
         }
+
+
+class PriorityQueueSimulation(QueueSimulation):
+    def __init__(self, env, num_servers, arrival_rate, service_rate, service_dist='M', max_time=100000):
+        # Initialize superclass
+        super().__init__(env, num_servers, arrival_rate, service_rate, service_dist, max_time)
+
+        # Create priority queue
+        self.server = simpy.ResourcePriority(env, capacity=num_servers)
+
+    def customer_service(self):
+        """Customer service process with priority (shortest job first)."""
+        # Generate service time
+        arrival_time = self.env.now
+        service_time = self.generate_service_time()
+
+        # Request server with priority based on service time
+        yield self.server.request(priority=service_time)
+
+        # Calculate waiting time
+        waiting_time = self.env.now - arrival_time
+        self.waiting_times.append(waiting_time)
+        self.service_times.append(service_time)
+
+        # Service the customer
+        yield self.env.timeout(service_time)
+        self.completed += 1
+
+
+
+        
+
+
+
