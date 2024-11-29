@@ -17,6 +17,7 @@ class QueueSimulation:
         
         # Statistics collection
         self.waiting_times = []
+        self.queue_length = []
         self.service_times = []
         self.arrivals = 0
         self.completed = 0
@@ -44,6 +45,7 @@ class QueueSimulation:
             
             # Start customer service process
             self.arrivals += 1
+            self.queue_length.append(self.arrivals - self.completed)
             self.env.process(self.customer_service())
     
     def customer_service(self):
@@ -67,13 +69,13 @@ class QueueSimulation:
     #TODO UNDERSTANDE REGARDING THE CONFIDENCE INTERVAL
     def get_statistics(self):
         """Calculate statistics from the simulation."""
-        
         return {
             'waiting_times': self.waiting_times,
             'avg_waiting_time': np.mean(self.waiting_times),
             'avg_service_time': np.mean(self.service_times),
             'num_samples': len(self.waiting_times),
-            'utilization': np.mean(self.service_times) * self.arrival_rate / self.num_servers
+            'queue_length': self.queue_length,
+            'utilization': np.mean(self.service_times) * self.arrival_rate / self.num_servers #np.mean(self.interarrival_times)
         }
 
 
