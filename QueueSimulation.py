@@ -96,16 +96,16 @@ class PriorityQueueSimulation(QueueSimulation):
         arrival_time = self.env.now
          # Add job to the priority queue with its arrival time
         self.priority_queue.append((service_time, arrival_time))
-        self.priority_queue.sort(key=lambda x: x[0])  # Sort by service time (SJF)
+        self.priority_queue.sort(key=lambda x: x[0])  # Sort by service time
 
         # Request a server
         with self.server.request(priority=service_time) as request:
             yield request  # Wait for a server to become available
 
-            # Dequeue the job (SJF ensures it's the shortest job)
+            # Dequeue the job 
             service_time, arrival_time = self.priority_queue.pop(0)
 
-            # Calculate waiting time correctly
+            # Calculate waiting time
             waiting_time = self.env.now - arrival_time
             self.waiting_times.append(waiting_time)
             self.service_times.append(service_time)
