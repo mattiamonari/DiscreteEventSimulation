@@ -4,13 +4,13 @@ from matplotlib.gridspec import GridSpec
 import simpy
 import scipy.stats as stats
 import numpy as np
-from QueueSimulation import QueueSimulation
+from QueueSimulation import QueueSimulation, PriorityQueueSimulation
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import random 
 
-def run_simulation(num_runs, num_servers, arrival_rate, service_rate, service_dist='M', max_time=100000):
+def run_simulation(queue_method, num_runs, num_servers, arrival_rate, service_rate, service_dist='M', max_time=100000):
     """Run multiple simulation replications."""
     results = {
         'waiting_times_runs': [],
@@ -23,7 +23,7 @@ def run_simulation(num_runs, num_servers, arrival_rate, service_rate, service_di
     for _ in range(num_runs):
         # Set up environment
         env = simpy.Environment()
-        sim = QueueSimulation(env, num_servers, arrival_rate, 
+        sim = queue_method(env, num_servers, arrival_rate, 
                                 service_rate, service_dist, max_time)
         env.run(until=max_time)
         
@@ -36,7 +36,7 @@ def run_simulation(num_runs, num_servers, arrival_rate, service_rate, service_di
     
     return results
 
-def compare_queue_configurations(results):
+def compare_queue_configurations(queue_method,results):
     """
     Create comprehensive comparison plots for queue configurations.
     
@@ -69,11 +69,11 @@ def compare_queue_configurations(results):
     axs[2].set_ylim(0, 1)
     
     plt.tight_layout()
-    plt.savefig(f'images/queue_configuration_comparison.pdf')
+    plt.savefig(f'images/queue_configuration_comparison_{queue_method.__name__}.pdf')
     
     return fig
 
-def plot_time_series(waiting_times, window_size=25):
+def plot_time_series(queue_method, waiting_times, window_size=25):
     """
     Create a time series plot of waiting times with rolling average.
     
@@ -100,10 +100,10 @@ def plot_time_series(waiting_times, window_size=25):
     plt.legend()
     plt.tight_layout()
 
-    plt.savefig(f'images/MM1_time_series.pdf')
+    plt.savefig(f'images/MM1_time_series_{queue_method.__name__}.pdf')
 
 
-def compare_server_numbers():
+def compare_server_numbers(queue_method):
     rho = 0.9  # System load
     server_capacity = 1.0 # In the assignment this is called server capacity. Why?
     n_runs = 250
@@ -118,7 +118,7 @@ def compare_server_numbers():
     results = {}
     for servers_number, lambda_, dist in configs:
         key = f"M/{dist}/{servers_number}"
-        results[key] = run_simulation(n_runs, servers_number, lambda_, server_capacity, dist, n_runs)
+        results[key] = run_simulation(queue_method,n_runs, servers_number, lambda_, server_capacity, dist, n_runs)
 
 
     statistics = {}
@@ -149,14 +149,15 @@ def compare_server_numbers():
             'mean_num_samples': num_samples
         }
 
-    compare_queue_configurations(statistics)
+    compare_queue_configurations(queue_method,statistics)
 
     random_index = int(random.random() * statistics['M/M/1']['mean_num_samples'])
 
     print(results['M/M/1']['waiting_times_runs'][random_index])
     
-    plot_time_series(results['M/M/1']['waiting_times_list'][random_index], window_size=5)
+    plot_time_series(queue_method, results['M/M/1']['waiting_times_list'][random_index], window_size=5)
 
 
 if __name__ == "__main__":
-    compare_server_numbers()
+    compare_server_numbers(QueueSimulation)
+    compare_server_numbers(PriorityQueueSimulation)
