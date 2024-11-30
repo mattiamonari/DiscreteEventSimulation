@@ -4,6 +4,9 @@ import numpy as np
 import scipy.stats as stats
 
 class QueueSimulation:
+
+    print_name = "random_queue"
+
     def __init__(self, env, num_servers, arrival_rate, service_rate, service_dist='M', max_time=100000):
         self.env = env
         self.num_servers = num_servers
@@ -66,7 +69,6 @@ class QueueSimulation:
             yield self.env.timeout(service_time)
             self.completed += 1
     
-    #TODO UNDERSTANDE REGARDING THE CONFIDENCE INTERVAL
     def get_statistics(self):
         """Calculate statistics from the simulation."""
         return {
@@ -81,6 +83,9 @@ class QueueSimulation:
 
 
 class PriorityQueueSimulation(QueueSimulation):
+
+    print_name = "priority_queue"
+
     def __init__(self, env, num_servers, arrival_rate, service_rate, service_dist='M', max_time=100000):
         # Initialize superclass
         super().__init__(env, num_servers, arrival_rate, service_rate, service_dist, max_time)
