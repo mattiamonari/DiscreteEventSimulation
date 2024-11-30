@@ -4,7 +4,7 @@ from matplotlib.gridspec import GridSpec
 import simpy
 import scipy.stats as stats
 import numpy as np
-from QueueSimulation import QueueSimulation
+from QueueSimulation import QueueSimulation, PriorityQueueSimulation
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
@@ -26,7 +26,7 @@ def run_simulation(num_runs, num_servers, arrival_rate, service_rate, service_di
     for _ in tqdm(range(num_runs), desc=f"Simulation for {service_dist}/{service_dist}/{num_servers}"):
         # Set up environment
         env = simpy.Environment()
-        sim = QueueSimulation(env, num_servers, arrival_rate, 
+        sim = queue_method(env, num_servers, arrival_rate, 
                                 service_rate, service_dist, max_time)
         env.run(until=max_time)
         
@@ -40,7 +40,7 @@ def run_simulation(num_runs, num_servers, arrival_rate, service_rate, service_di
     
     return results
 
-def compare_queue_configurations(results):
+def compare_queue_configurations(queue_method,results):
     """
     Create comprehensive and visually engaging comparison plots.
     
@@ -88,7 +88,7 @@ def compare_queue_configurations(results):
     axs[1, 1].set_ylabel('Utilization')
     
     plt.tight_layout()
-    plt.savefig('advanced_queue_configuration_comparison.pdf')
+    plt.savefig(f'images/queue_configuration_comparison_{queue_method.__name__}.pdf')
     
     return fig
 
@@ -147,10 +147,10 @@ def plot_queue_metrics(waiting_times_list, queue_length_list, config_name, rho, 
     ax2.legend(prop = { "size": 13 })
     
     plt.tight_layout()
-    plt.savefig(f'images/{config_name}_metrics.pdf')
+    plt.savefig(f'images/{config_name}_metrics_{queue_method.__name__}.pdf')
     plt.close()
 
-def compare_server_numbers():
+def compare_server_numbers(queue_method):
     rho = 0.9  # System load
     server_capacity = 1.0 # In the assignment this is called server capacity. Why?
     n_runs = 1000
@@ -165,7 +165,7 @@ def compare_server_numbers():
     results = {}
     for servers_number, lambda_, dist in configs:
         key = f"M/{dist}/{servers_number}"
-        results[key] = run_simulation(n_runs, servers_number, lambda_, server_capacity, dist, n_runs)
+        results[key] = run_simulation(queue_method,n_runs, servers_number, lambda_, server_capacity, dist, n_runs)
 
     statistics = {}
     for config, data in results.items():
@@ -197,43 +197,15 @@ def compare_server_numbers():
             'queue_length': data['queue_length']
         }
 
-    compare_queue_configurations(statistics)
+    compare_queue_configurations(queue_method,statistics)
 
-    plot_queue_metrics(
-        results['M/M/1']['waiting_times_list'], 
-        results['M/M/1']['queue_length'], 
-        'MM1', 
-        rho,
-        1
-    )
-    plot_queue_metrics(
-        results['M/M/2']['waiting_times_list'], 
-        results['M/M/2']['queue_length'], 
-        'MM2', 
-        rho,
-        2
-    )
-    plot_queue_metrics(
-        results['M/M/4']['waiting_times_list'], 
-        results['M/M/4']['queue_length'], 
-        'MM4', 
-        rho,
-        4
-    )
+    random_index = int(random.random() * statistics['M/M/1']['mean_num_samples'])
+
+    print(results['M/M/1']['waiting_times_runs'][random_index])
+    
+    plot_time_series(queue_method, results['M/M/1']['waiting_times_list'][random_index], window_size=5)
 
 
 if __name__ == "__main__":
-    params = {'legend.fontsize': 'x-large',
-            #'figure.figsize': (15, 5),
-            'axes.labelsize': 'x-large',
-            'axes.titlesize':'xx-large',
-            'xtick.labelsize':'x-large',
-            'ytick.labelsize':'x-large',
-            }
-    
-    font = {'size': 12}
-
-    plt.rc('font', **font)
-    plt.rcParams.update(params)
-
-    compare_server_numbers()
+    compare_server_numbers(QueueSimulation)
+    compare_server_numbers(PriorityQueueSimulation)

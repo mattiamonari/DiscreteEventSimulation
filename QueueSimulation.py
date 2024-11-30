@@ -79,35 +79,39 @@ class QueueSimulation:
         }
 
 
+
 class PriorityQueueSimulation(QueueSimulation):
     def __init__(self, env, num_servers, arrival_rate, service_rate, service_dist='M', max_time=100000):
         # Initialize superclass
         super().__init__(env, num_servers, arrival_rate, service_rate, service_dist, max_time)
 
         # Create priority queue
-        self.server = simpy.ResourcePriority(env, capacity=num_servers)
+        self.server = simpy.PriorityResource(env, capacity=num_servers)
+        self.priority_queue = []
+
+
 
     def customer_service(self):
         """Customer service process with priority (shortest job first)."""
         # Generate service time
-        arrival_time = self.env.now
         service_time = self.generate_service_time()
+        arrival_time = self.env.now
+         # Add job to the priority queue with its arrival time
+        self.priority_queue.append((service_time, arrival_time))
+        self.priority_queue.sort(key=lambda x: x[0])  # Sort by service time
 
-        # Request server with priority based on service time
-        yield self.server.request(priority=service_time)
+        # Request a server
+        with self.server.request(priority=service_time) as request:
+            yield request  # Wait for a server to become available
 
-        # Calculate waiting time
-        waiting_time = self.env.now - arrival_time
-        self.waiting_times.append(waiting_time)
-        self.service_times.append(service_time)
+            # Dequeue the job 
+            service_time, arrival_time = self.priority_queue.pop(0)
 
-        # Service the customer
-        yield self.env.timeout(service_time)
-        self.completed += 1
+            # Calculate waiting time
+            waiting_time = self.env.now - arrival_time
+            self.waiting_times.append(waiting_time)
+            self.service_times.append(service_time)
 
-
-
-        
-
-
-
+            # Simulate service
+            yield self.env.timeout(service_time)
+            self.completed += 1
