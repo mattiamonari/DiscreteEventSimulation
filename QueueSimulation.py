@@ -92,7 +92,7 @@ class PriorityQueueSimulation(QueueSimulation):
 
         # Create priority queue
         self.server = simpy.PriorityResource(env, capacity=num_servers)
-        self.priority_queue = []
+        self.data = {}
 
 
 
@@ -101,16 +101,14 @@ class PriorityQueueSimulation(QueueSimulation):
         # Generate service time
         service_time = self.generate_service_time()
         arrival_time = self.env.now
-         # Add job to the priority queue with its arrival time
-        self.priority_queue.append((service_time, arrival_time))
-        self.priority_queue.sort(key=lambda x: x[0])  # Sort by service time
 
         # Request a server
         with self.server.request(priority=service_time) as request:
+            self.data[request] = (service_time, arrival_time)
             yield request  # Wait for a server to become available
 
-            # Dequeue the job 
-            service_time, arrival_time = self.priority_queue.pop(0)
+            # Dequeue the job
+            service_time, arrival_time = self.data[request]
 
             # Calculate waiting time
             waiting_time = self.env.now - arrival_time
