@@ -14,8 +14,6 @@ __all__ = ['run_simulation', 'compare_queue_configurations',
            'compare_server_numbers', 'create_configuration_heatmap', 
            'perform_welch_t_test', 'analyze_conf_int', 'plot_minimum_runs']
 
-FONT_SIZE = 17
-
 def run_simulation(queue_method, num_runs, num_servers, arrival_rate, service_rate, max_time, service_dist='M'):
     """Run multiple simulation replications."""
 
