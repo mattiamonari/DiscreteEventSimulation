@@ -8,6 +8,12 @@ import pandas as pd
 
 from QueueSimulation import QueueSimulation, PriorityQueueSimulation
 
+
+__all__ = ['run_simulation', 'compare_queue_configurations', 
+           'plot_consolidated_queue_metrics', 'create_advanced_visualizations', 
+           'compare_server_numbers', 'create_configuration_heatmap', 
+           'perform_welch_t_test', 'analyze_conf_int', 'plot_minimum_runs']
+
 FONT_SIZE = 17
 
 def run_simulation(queue_method, num_runs, num_servers, arrival_rate, service_rate, max_time, service_dist='M'):
@@ -327,50 +333,3 @@ def plot_minimum_runs(indexes, rho_range, service_time_dist, n_servers=[2, 4]):
     plt.tight_layout()
     plt.savefig(f"images/runs_required_{service_time_dist}.pdf")
     plt.close()
-
-if __name__ == "__main__":
-    
-    params = {'legend.fontsize': 'x-large',
-            'axes.labelsize': 'x-large',
-            'axes.titlesize':'xx-large',
-            'xtick.labelsize':'x-large',
-            'ytick.labelsize':'x-large' }
-    
-    font = {'size': FONT_SIZE}
-
-    plt.rcParams.update(params)
-    plt.rc('font', **font)
-
-    service_rate = 1 
-    n_runs = 25
-    max_time = 2e3
-    rho_range = [0.8, 0.85, 0.9, 0.95]
-    service_time_dists = ['M', 'D', 'H']
-
-    rho_results = {}
-    indexes = {}
-    for rho in rho_range:
-        rho_results[rho] = compare_server_numbers(QueueSimulation, rho, service_rate, 'M', n_runs, max_time=max_time)
-        rho_results[rho].update(compare_server_numbers(PriorityQueueSimulation, rho, service_rate, 'M', n_runs, max_time=max_time))
-        rho_results[rho].update(compare_server_numbers(QueueSimulation, rho, service_rate, 'D', n_runs, max_time=max_time))
-        rho_results[rho].update(compare_server_numbers(QueueSimulation, rho, service_rate, 'H', n_runs, max_time=max_time))
-        
-        indexes.update(analyze_conf_int('M', rho_results[rho], rho))
-        indexes.update(analyze_conf_int('D', rho_results[rho], rho))
-        indexes.update(analyze_conf_int('H', rho_results[rho], rho))
-
-    plot_minimum_runs(indexes, rho_range, 'M')
-    plot_minimum_runs(indexes, rho_range, 'D')
-    plot_minimum_runs(indexes, rho_range, 'H')
-
-    comparisons = {}
-    for dist in service_time_dists:
-        for i1, rho1 in enumerate(rho_range):
-            t_tests = perform_welch_t_test(dist, n_runs, rho_results[rho1], rho1)
-
-            comparisons.update(t_tests)
-    
-    create_advanced_visualizations(comparisons)
-    create_configuration_heatmap(rho_results)
-    
-    compare_queue_configurations(QueueSimulation, rho_results[0.9])
